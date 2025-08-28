@@ -187,7 +187,9 @@ def ensure_db(conn: sqlite3.Connection):
 
 
 def connect(db_path: str) -> sqlite3.Connection:
-    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+    dir_name = os.path.dirname(db_path)
+    if dir_name:
+        os.makedirs(dir_name, exist_ok=True)
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     ensure_db(conn)
@@ -208,7 +210,7 @@ def pick(rows: List[sqlite3.Row], label_fields: Tuple[str, ...] = ("id", "name")
         print("(none)")
         return None
     for i, r in enumerate(rows, 1):
-        label = " | ".join(str(r.get(f, r[f])) for f in label_fields if f in r.keys())
+        label = " | ".join(str(r[f]) if f in r.keys() else "" for f in label_fields)
         print(f"{i}) {label}")
     sel = input("Select number (or blank to cancel): ").strip()
     if not sel:
@@ -347,7 +349,7 @@ def edit_roles(conn: sqlite3.Connection, inc_id: int):
         print("a) add  e) edit  d) delete  q) back")
         ch = input("> ").strip().lower()
         if ch == 'a':
-            role = prompt("Role (e.g., IR Lead, App Owner)>)")
+            role = prompt("Role (e.g., IR Lead, App Owner)")
             person = prompt("Person (name/handle)")
             conn.execute("INSERT INTO roles(incident_id, role, person) VALUES(?,?,?)", (inc_id, role, person))
             conn.commit()
@@ -743,7 +745,7 @@ def export_pdf(md_path: str, pdf_path: str) -> Optional[str]:
                 story.append(Paragraph(f"<b>{line[3:]}</b>", styles['Heading2']))
                 story.append(Spacer(1, 8))
             elif line.startswith('### '):
-                story.append(Paragraph(f"<b>{line[4:]}</b>", styles['Heading3'])))
+                story.append(Paragraph(f"<b>{line[4:]}</b>", styles['Heading3']))
                 story.append(Spacer(1, 6))
             elif line.startswith('- '):
                 story.append(Paragraph(line[2:], styles['Normal']))
