@@ -1,0 +1,12 @@
+# .gitignore
+
+# Ignore everything by default
+*
+
+# Allow Python script and requirements.txt
+!incident_manager.py
+!requirements.txt
+
+# Allow README and gitignore itself
+!README.md
+!.gitignore
