@@ -29,3 +29,5 @@ python3 -m pip install --upgrade pip
 python3 -m pip install reportlab
 
 python3 incident_manager.py
+
+## Reference https://blog.sguez.dev/dfir-application-security-a-practical-incident-response-playbook-for-cisos-b31fb4253782
