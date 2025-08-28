@@ -44,6 +44,7 @@ from typing import List, Tuple, Optional
 import random, string
 
 OPEN_STATUS = "open"
+NONE_TEXT = "(none)"
 
 # Optional PDF support
 try:
@@ -56,11 +57,17 @@ except Exception:
     PDF_AVAILABLE = False
 
 DB_DEFAULT = os.path.join("db", "ir.sqlite3")
-NOW = lambda: dt.datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
 
 def now_utc_iso() -> str:
     """Return current UTC time as ISO 8601 string with Z suffix, timezone-aware."""
+    # Use timezone-aware UTC datetime, not utcnow
     return dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+def gen_incident_key() -> str:
+    """Generate incident id in the format <rand-4char>-<YYYY>-<MM>-<DD>."""
+    rand = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(4))
+    today = dt.datetime.now(dt.timezone.utc)
+    return f"{rand}-{today:%Y-%m-%d}"
 
 # ------------------------------ DB LAYER ------------------------------
 SCHEMA = [
@@ -180,12 +187,6 @@ SUGGESTED_TRIGGERS = [
     "Vendor advisory indicating a malicious update/compromised package",
 ]
 
-def gen_incident_key() -> str:
-    """Generate incident id in the format <rand-4char>-<YYYY>-<MM>-<DD>."""
-    rand = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(4))
-    today = dt.datetime.now(dt.timezone.utc)
-    return f"{rand}-{today:%Y-%m-%d}"
-
 def ensure_db(conn: sqlite3.Connection):
     for ddl in SCHEMA:
         conn.execute(ddl)
@@ -213,7 +214,7 @@ def prompt(msg: str, default: Optional[str] = None) -> str:
 
 def pick(rows: List[sqlite3.Row], label_fields: Tuple[str, ...] = ("id", "name")) -> Optional[int]:
     if not rows:
-        print("(none)")
+        print(NONE_TEXT)
         return None
     for i, r in enumerate(rows, 1):
         label = " | ".join(str(r[f]) if f in r.keys() else "" for f in label_fields)
@@ -291,7 +292,7 @@ def list_incidents(conn: sqlite3.Connection) -> List[sqlite3.Row]:
     )
     rows = cur.fetchall()
     if not rows:
-        print("(no incidents yet)")
+        print(NONE_TEXT)
     else:
         print("\n-- Incidents --")
         for r in rows:
@@ -348,7 +349,7 @@ def edit_roles(conn: sqlite3.Connection, inc_id: int):
         rows = conn.execute("SELECT * FROM roles WHERE incident_id=? ORDER BY id", (inc_id,)).fetchall()
         print("\n-- Roles --")
         if not rows:
-            print("(none)")
+            print(NONE_TEXT)
         else:
             for r in rows:
                 print(f"[{r['id']}] {r['role']}: {r['person']}")
@@ -385,7 +386,7 @@ def edit_triggers(conn: sqlite3.Connection, inc_id: int):
         rows = conn.execute("SELECT * FROM triggers WHERE incident_id=? ORDER BY id", (inc_id,)).fetchall()
         print("\n-- Triggers --")
         if not rows:
-            print("(none)")
+            print(NONE_TEXT)
         else:
             for r in rows:
                 print(f"[{r['id']}] {r['description']}")
@@ -427,7 +428,7 @@ def edit_tasks(conn: sqlite3.Connection, inc_id: int):
             rows = conn.execute("SELECT * FROM tasks WHERE incident_id=? AND phase=? ORDER BY id", (inc_id, phase)).fetchall()
             print(f"\n-- Tasks ({phase}) --")
             if not rows:
-                print("(none)")
+                print(NONE_TEXT)
             else:
                 for r in rows:
                     print(f"[{r['id']}] {r['description']} | status={r['status']} | time={r['time']} | notes={r['notes'] or ''}")
@@ -486,7 +487,7 @@ def edit_evidence(conn: sqlite3.Connection, inc_id: int):
         rows = conn.execute("SELECT * FROM evidence WHERE incident_id=? ORDER BY id", (inc_id,)).fetchall()
         print("\n-- Evidence --")
         if not rows:
-            print("(none)")
+            print(NONE_TEXT)
         else:
             for r in rows:
                 print(f"[{r['id']}] {r['artifact']} | {r['path']} | sha256={r['sha256']} | {r['notes'] or ''}")
@@ -530,14 +531,14 @@ def edit_timeline(conn: sqlite3.Connection, inc_id: int):
         rows = conn.execute("SELECT * FROM timeline WHERE incident_id=? ORDER BY time", (inc_id,)).fetchall()
         print("\n-- Timeline --")
         if not rows:
-            print("(none)")
+            print(NONE_TEXT)
         else:
             for r in rows:
                 print(f"[{r['id']}] {r['time']} | {r['actor']} | {r['event']} | {r['decision']}")
         print("a) add  e) edit  d) delete  q) back")
         ch = input("> ").strip().lower()
         if ch == 'a':
-            t = prompt("Time (ISO)", NOW())
+            t = prompt("Time (ISO)", now_utc_iso())
             a = prompt("Actor (person/system)")
             e = prompt("Event")
             d = prompt("Decisions/Notes")
@@ -567,7 +568,7 @@ def edit_checklist(conn: sqlite3.Connection, inc_id: int):
         rows = conn.execute("SELECT * FROM checklist WHERE incident_id=? ORDER BY id", (inc_id,)).fetchall()
         print("\n-- Executive Checklist --")
         if not rows:
-            print("(none)")
+            print(NONE_TEXT)
         else:
             for r in rows:
                 mark = "x" if r['checked'] else " "
@@ -938,4 +939,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
