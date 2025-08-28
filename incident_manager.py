@@ -43,6 +43,8 @@ import hashlib
 from typing import List, Tuple, Optional
 import random, string
 
+OPEN_STATUS = "open"
+
 # Optional PDF support
 try:
     from reportlab.lib.pagesizes import A4
@@ -55,6 +57,10 @@ except Exception:
 
 DB_DEFAULT = os.path.join("db", "ir.sqlite3")
 NOW = lambda: dt.datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+
+def now_utc_iso() -> str:
+    """Return current UTC time as ISO 8601 string with Z suffix, timezone-aware."""
+    return dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 # ------------------------------ DB LAYER ------------------------------
 SCHEMA = [
@@ -177,7 +183,7 @@ SUGGESTED_TRIGGERS = [
 def gen_incident_key() -> str:
     """Generate incident id in the format <rand-4char>-<YYYY>-<MM>-<DD>."""
     rand = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(4))
-    today = dt.datetime.utcnow()
+    today = dt.datetime.now(dt.timezone.utc)
     return f"{rand}-{today:%Y-%m-%d}"
 
 def ensure_db(conn: sqlite3.Connection):
@@ -246,8 +252,8 @@ def create_incident(conn: sqlite3.Connection):
     default_key = gen_incident_key()
     incident_key = prompt("Incident ID (auto-generated format rand4-YYYY-MM-DD)", default_key)
     severity = prompt("Severity (e.g., SEV-1/2/3)")
-    incident_start = prompt("Incident start time (ISO 8601)", NOW())
-    created_at = NOW()
+    incident_start = prompt("Incident start time (ISO 8601)", now_utc_iso())
+    created_at = now_utc_iso()
     classification = prompt("Classification (Confidential/Internal/Public)", "Confidential")
     reported_by = prompt("Reported by (name/team/source)")
     detection_source = prompt("Primary detection source (SIEM/WAF/API GW/User report/etc.)")
@@ -259,7 +265,7 @@ def create_incident(conn: sqlite3.Connection):
         VALUES(?,?,?,?,?,?,?,?,?,?)
         """,
         (incident_key, name, severity, classification, reported_by,
-         detection_source, incident_start, created_at, created_at, "open"),
+         detection_source, incident_start, created_at, created_at, OPEN_STATUS),
     )
     inc_id = cur.lastrowid
 
@@ -268,7 +274,7 @@ def create_incident(conn: sqlite3.Connection):
         for d in items:
             conn.execute(
                 "INSERT INTO tasks(incident_id, phase, description, status, time, notes) VALUES(?,?,?,?,?,?)",
-                (inc_id, phase, d, "pending", NOW(), ""),
+                (inc_id, phase, d, "pending", now_utc_iso(), ""),
             )
     for item in DEFAULT_CHECKLIST:
         conn.execute(
@@ -330,7 +336,7 @@ def edit_metadata(conn: sqlite3.Connection, inc_id: int):
         cur = r[col]
         val = prompt(label, cur or "")
         updates[col] = val
-    updates["updated_at"] = NOW()
+    updates["updated_at"] = now_utc_iso()
     sets = ",".join([f"{k}=?" for k in updates.keys()])
     conn.execute(f"UPDATE incidents SET {sets} WHERE id=?", (*updates.values(), inc_id))
     conn.commit()
@@ -431,22 +437,22 @@ def edit_tasks(conn: sqlite3.Connection, inc_id: int):
                 desc = prompt("Description")
                 conn.execute(
                     "INSERT INTO tasks(incident_id, phase, description, status, time, notes) VALUES(?,?,?,?,?,?)",
-                    (inc_id, phase, desc, "pending", NOW(), ""),
+                    (inc_id, phase, desc, "pending", now_utc_iso(), ""),
                 )
                 conn.commit()
             elif ch == 's':
                 tid = input("ID: ").strip()
                 status = prompt("Status (pending/done/na)")
-                conn.execute("UPDATE tasks SET status=?, time=? WHERE id=? AND incident_id=?", (status, NOW(), tid, inc_id))
+                conn.execute("UPDATE tasks SET status=?, time=? WHERE id=? AND incident_id=?", (status, now_utc_iso(), tid, inc_id))
                 conn.commit()
             elif ch == 'n':
                 tid = input("ID: ").strip()
                 notes = prompt("Notes")
-                conn.execute("UPDATE tasks SET notes=?, time=? WHERE id=? AND incident_id=?", (notes, NOW(), tid, inc_id))
+                conn.execute("UPDATE tasks SET notes=?, time=? WHERE id=? AND incident_id=?", (notes, now_utc_iso(), tid, inc_id))
                 conn.commit()
             elif ch == 't':
                 tid = input("ID: ").strip()
-                t = prompt("Time (ISO)", NOW())
+                t = prompt("Time (ISO)", now_utc_iso())
                 conn.execute("UPDATE tasks SET time=? WHERE id=? AND incident_id=?", (t, tid, inc_id))
                 conn.commit()
             elif ch == 'e':
@@ -635,7 +641,7 @@ def export_markdown(conn: sqlite3.Connection, inc_id: int, out_path: str) -> str
     md = []
     md.append(f"# Incident Report: {inc['name'] or '(unnamed)'}")
     md.append("")
-    md.append(f"Generated: {NOW()}")
+    md.append(f"Generated: {now_utc_iso()}")
     md.append("")
     md.append("## Metadata")
     md.append(f"- **Incident ID:** {inc['incident_key'] or 'N/A'}")
@@ -644,7 +650,7 @@ def export_markdown(conn: sqlite3.Connection, inc_id: int, out_path: str) -> str
     md.append(f"- **Reported by:** {inc['reported_by'] or 'N/A'}")
     md.append(f"- **Primary detection source:** {inc['detection_source'] or 'N/A'}")
     md.append(f"- **Incident start (first known):** {inc['incident_start'] or 'N/A'}")
-    md.append(f"- **Status:** {inc['status'] or 'open'}")
+    md.append(f"- **Status:** {inc['status'] or OPEN_STATUS}")
     md.append("")
 
     md.append("## Incident Channel / Roles")
@@ -745,7 +751,6 @@ def export_pdf(md_path: str, pdf_path: str) -> Optional[str]:
                 story.append(Paragraph(f"<b>{line[3:]}</b>", styles['Heading2']))
                 story.append(Spacer(1, 8))
             elif line.startswith('### '):
-                story.append(Paragraph(f"<b>{line[4:]}</b>", styles['Heading3']))
                 story.append(Spacer(1, 6))
             elif line.startswith('- '):
                 story.append(Paragraph(line[2:], styles['Normal']))
@@ -838,7 +843,7 @@ def incident_menu(conn: sqlite3.Connection, inc_id: int):
         elif ch == '8':
             do_export(conn, inc_id)
         elif ch == '9':
-            conn.execute("UPDATE incidents SET status=?, updated_at=? WHERE id=?", ("closed", NOW(), inc_id))
+            conn.execute("UPDATE incidents SET status=?, updated_at=? WHERE id=?", ("closed", now_utc_iso(), inc_id))
             conn.commit()
             print("Status set to closed.")
         elif ch == 'q':
@@ -933,3 +938,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
