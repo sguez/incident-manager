@@ -345,14 +345,17 @@ def edit_metadata(conn: sqlite3.Connection, inc_id: int):
 
 
 def edit_roles(conn: sqlite3.Connection, inc_id: int):
-    while True:
-        rows = conn.execute("SELECT * FROM roles WHERE incident_id=? ORDER BY id", (inc_id,)).fetchall()
+    def print_roles(rows):
         print("\n-- Roles --")
         if not rows:
             print(NONE_TEXT)
         else:
             for r in rows:
                 print(f"[{r['id']}] {r['role']}: {r['person']}")
+
+    while True:
+        rows = conn.execute("SELECT * FROM roles WHERE incident_id=? ORDER BY id", (inc_id,)).fetchall()
+        print_roles(rows)
         print("a) add  e) edit  d) delete  q) back")
         ch = input("> ").strip().lower()
         if ch == 'a':
@@ -382,14 +385,17 @@ def edit_roles(conn: sqlite3.Connection, inc_id: int):
 
 
 def edit_triggers(conn: sqlite3.Connection, inc_id: int):
-    while True:
-        rows = conn.execute("SELECT * FROM triggers WHERE incident_id=? ORDER BY id", (inc_id,)).fetchall()
+    def print_triggers(rows):
         print("\n-- Triggers --")
         if not rows:
             print(NONE_TEXT)
         else:
             for r in rows:
                 print(f"[{r['id']}] {r['description']}")
+
+    while True:
+        rows = conn.execute("SELECT * FROM triggers WHERE incident_id=? ORDER BY id", (inc_id,)).fetchall()
+        print_triggers(rows)
         print("a) add (pick from suggestions)  c) custom add  e) edit  d) delete  q) back")
         ch = input("> ").strip().lower()
         if ch == 'a':
@@ -423,74 +429,99 @@ def edit_triggers(conn: sqlite3.Connection, inc_id: int):
 
 
 def edit_tasks(conn: sqlite3.Connection, inc_id: int):
+    def print_tasks(rows, phase):
+        print(f"\n-- Tasks ({phase}) --")
+        if not rows:
+            print(NONE_TEXT)
+        else:
+            for r in rows:
+                print(f"[{r['id']}] {r['description']} | status={r['status']} | time={r['time']} | notes={r['notes'] or ''}")
+
+    def handle_add(phase, inc_id):
+        desc = prompt("Description")
+        conn.execute(
+            "INSERT INTO tasks(incident_id, phase, description, status, time, notes) VALUES(?,?,?,?,?,?)",
+            (inc_id, phase, desc, "pending", now_utc_iso(), ""),
+        )
+        conn.commit()
+
+    def handle_set_status(inc_id):
+        tid = input("ID: ").strip()
+        status = prompt("Status (pending/done/na)")
+        conn.execute("UPDATE tasks SET status=?, time=? WHERE id=? AND incident_id=?", (status, now_utc_iso(), tid, inc_id))
+        conn.commit()
+
+    def handle_set_notes(inc_id):
+        tid = input("ID: ").strip()
+        notes = prompt("Notes")
+        conn.execute("UPDATE tasks SET notes=?, time=? WHERE id=? AND incident_id=?", (notes, now_utc_iso(), tid, inc_id))
+        conn.commit()
+
+    def handle_set_time(inc_id):
+        tid = input("ID: ").strip()
+        t = prompt("Time (ISO)", now_utc_iso())
+        conn.execute("UPDATE tasks SET time=? WHERE id=? AND incident_id=?", (t, tid, inc_id))
+        conn.commit()
+
+    def handle_edit_desc(inc_id):
+        tid = input("ID: ").strip()
+        desc = prompt("New description")
+        conn.execute("UPDATE tasks SET description=? WHERE id=? AND incident_id=?", (desc, tid, inc_id))
+        conn.commit()
+
+    def handle_delete(inc_id):
+        tid = input("ID to delete: ").strip()
+        if tid.isdigit():
+            conn.execute("DELETE FROM tasks WHERE id=? AND incident_id=?", (tid, inc_id))
+            conn.commit()
+
     def manage_phase(phase: str):
+        actions = {
+            'a': lambda: handle_add(phase, inc_id),
+            's': lambda: handle_set_status(inc_id),
+            'n': lambda: handle_set_notes(inc_id),
+            't': lambda: handle_set_time(inc_id),
+            'e': lambda: handle_edit_desc(inc_id),
+            'd': lambda: handle_delete(inc_id),
+        }
         while True:
             rows = conn.execute("SELECT * FROM tasks WHERE incident_id=? AND phase=? ORDER BY id", (inc_id, phase)).fetchall()
-            print(f"\n-- Tasks ({phase}) --")
-            if not rows:
-                print(NONE_TEXT)
-            else:
-                for r in rows:
-                    print(f"[{r['id']}] {r['description']} | status={r['status']} | time={r['time']} | notes={r['notes'] or ''}")
+            print_tasks(rows, phase)
             print("a) add  s) set status  n) set notes  t) set time  e) edit desc  d) delete  q) back")
             ch = input("> ").strip().lower()
-            if ch == 'a':
-                desc = prompt("Description")
-                conn.execute(
-                    "INSERT INTO tasks(incident_id, phase, description, status, time, notes) VALUES(?,?,?,?,?,?)",
-                    (inc_id, phase, desc, "pending", now_utc_iso(), ""),
-                )
-                conn.commit()
-            elif ch == 's':
-                tid = input("ID: ").strip()
-                status = prompt("Status (pending/done/na)")
-                conn.execute("UPDATE tasks SET status=?, time=? WHERE id=? AND incident_id=?", (status, now_utc_iso(), tid, inc_id))
-                conn.commit()
-            elif ch == 'n':
-                tid = input("ID: ").strip()
-                notes = prompt("Notes")
-                conn.execute("UPDATE tasks SET notes=?, time=? WHERE id=? AND incident_id=?", (notes, now_utc_iso(), tid, inc_id))
-                conn.commit()
-            elif ch == 't':
-                tid = input("ID: ").strip()
-                t = prompt("Time (ISO)", now_utc_iso())
-                conn.execute("UPDATE tasks SET time=? WHERE id=? AND incident_id=?", (t, tid, inc_id))
-                conn.commit()
-            elif ch == 'e':
-                tid = input("ID: ").strip()
-                desc = prompt("New description")
-                conn.execute("UPDATE tasks SET description=? WHERE id=? AND incident_id=?", (desc, tid, inc_id))
-                conn.commit()
-            elif ch == 'd':
-                tid = input("ID to delete: ").strip()
-                if tid.isdigit():
-                    conn.execute("DELETE FROM tasks WHERE id=? AND incident_id=?", (tid, inc_id))
-                    conn.commit()
-            elif ch == 'q':
+            if ch == 'q':
                 break
+            action = actions.get(ch)
+            if action:
+                action()
 
+    phase_map = {
+        '1': "immediate",
+        '2': "next",
+        '3': "aftermath"
+    }
     while True:
         print("\nphases: 1) immediate  2) next (24–72h)  3) aftermath (≤2 weeks)  q) back")
         ch = input("> ").strip().lower()
-        if ch == '1':
-            manage_phase("immediate")
-        elif ch == '2':
-            manage_phase("next")
-        elif ch == '3':
-            manage_phase("aftermath")
-        elif ch == 'q':
+        if ch == 'q':
             break
+        phase = phase_map.get(ch)
+        if phase:
+            manage_phase(phase)
 
 
 def edit_evidence(conn: sqlite3.Connection, inc_id: int):
-    while True:
-        rows = conn.execute("SELECT * FROM evidence WHERE incident_id=? ORDER BY id", (inc_id,)).fetchall()
+    def print_evidence(rows):
         print("\n-- Evidence --")
         if not rows:
             print(NONE_TEXT)
         else:
             for r in rows:
                 print(f"[{r['id']}] {r['artifact']} | {r['path']} | sha256={r['sha256']} | {r['notes'] or ''}")
+
+    while True:
+        rows = conn.execute("SELECT * FROM evidence WHERE incident_id=? ORDER BY id", (inc_id,)).fetchall()
+        print_evidence(rows)
         print("a) add  r) recompute sha256  e) edit  d) delete  q) back")
         ch = input("> ").strip().lower()
         if ch == 'a':
@@ -527,14 +558,17 @@ def edit_evidence(conn: sqlite3.Connection, inc_id: int):
 
 
 def edit_timeline(conn: sqlite3.Connection, inc_id: int):
-    while True:
-        rows = conn.execute("SELECT * FROM timeline WHERE incident_id=? ORDER BY time", (inc_id,)).fetchall()
+    def print_timeline(rows):
         print("\n-- Timeline --")
         if not rows:
             print(NONE_TEXT)
         else:
             for r in rows:
                 print(f"[{r['id']}] {r['time']} | {r['actor']} | {r['event']} | {r['decision']}")
+
+    while True:
+        rows = conn.execute("SELECT * FROM timeline WHERE incident_id=? ORDER BY time", (inc_id,)).fetchall()
+        print_timeline(rows)
         print("a) add  e) edit  d) delete  q) back")
         ch = input("> ").strip().lower()
         if ch == 'a':
@@ -564,8 +598,7 @@ def edit_timeline(conn: sqlite3.Connection, inc_id: int):
 
 
 def edit_checklist(conn: sqlite3.Connection, inc_id: int):
-    while True:
-        rows = conn.execute("SELECT * FROM checklist WHERE incident_id=? ORDER BY id", (inc_id,)).fetchall()
+    def print_checklist(rows):
         print("\n-- Executive Checklist --")
         if not rows:
             print(NONE_TEXT)
@@ -573,6 +606,10 @@ def edit_checklist(conn: sqlite3.Connection, inc_id: int):
             for r in rows:
                 mark = "x" if r['checked'] else " "
                 print(f"[{r['id']}] [{mark}] {r['item']}")
+
+    while True:
+        rows = conn.execute("SELECT * FROM checklist WHERE incident_id=? ORDER BY id", (inc_id,)).fetchall()
+        print_checklist(rows)
         print("a) add  t) toggle  e) edit text  d) delete  q) back")
         ch = input("> ").strip().lower()
         if ch == 'a':
