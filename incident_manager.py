@@ -40,8 +40,8 @@ import os
 import sqlite3
 import textwrap
 import hashlib
-import shutil
 from typing import List, Tuple, Optional
+import random, string
 
 # Optional PDF support
 try:
@@ -174,6 +174,11 @@ SUGGESTED_TRIGGERS = [
     "Vendor advisory indicating a malicious update/compromised package",
 ]
 
+def gen_incident_key() -> str:
+    """Generate incident id in the format <rand-4char>-<YYYY>-<MM>-<DD>."""
+    rand = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(4))
+    today = dt.datetime.utcnow()
+    return f"{rand}-{today:%Y-%m-%d}"
 
 def ensure_db(conn: sqlite3.Connection):
     for ddl in SCHEMA:
@@ -236,7 +241,8 @@ def sha256_file(path: str) -> str:
 def create_incident(conn: sqlite3.Connection):
     print("\n== Create New Incident ==")
     name = prompt("Incident name")
-    incident_key = prompt("Incident ID (ticket/case number)")
+    default_key = gen_incident_key()
+    incident_key = prompt("Incident ID (auto-generated format rand4-YYYY-MM-DD)", default_key)
     severity = prompt("Severity (e.g., SEV-1/2/3)")
     incident_start = prompt("Incident start time (ISO 8601)", NOW())
     created_at = NOW()
