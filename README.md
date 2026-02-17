@@ -15,15 +15,6 @@ It guides security engineers through CISO-friendly incident response stages (Imm
 - **Forensic timeline** - Build timestamped event logs (UTC ISO-8601)
 - **Executive checklist** - Pre-populated CISO-friendly action items
 
-### 🔐 Enterprise Security (following `.claude_skills` patterns)
-- **JWT Authentication** - Secure token-based auth with refresh tokens
-- **Role-Based Access Control** - Admin, IR Lead, Viewer, Reporter roles
-- **Audit Logging** - Full audit trail of all mutations (DFIR compliance)
-- **Input Validation** - Pydantic schemas + OWASP-compliant sanitization
-- **Output Escaping** - Safe Markdown/HTML/PDF export (XSS prevention)
-- **Rate Limiting** - Per-endpoint protection against abuse
-- **Security Headers** - HSTS, CSP, X-Frame-Options, etc.
-
 ### 📦 Deployment Options
 - **Docker Compose** - Single-command standalone deployment
 - **Kubernetes** - Production-ready manifests + Helm chart
