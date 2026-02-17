@@ -1,0 +1,79 @@
+<svg viewBox="0 0 1200 700" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1200" height="700" fill="#ffffff"/>
+  
+  <!-- Title -->
+  <text x="600" y="40" font-size="28" font-weight="bold" text-anchor="middle" fill="#1a1a1a">
+    Create Incident - Guided Workflow
+  </text>
+  <text x="600" y="65" font-size="14" text-anchor="middle" fill="#666">
+    Step-by-step incident creation with role assignment
+  </text>
+  
+  <!-- Progress Bar -->
+  <rect x="50" y="90" width="1100" height="8" fill="#e0e0e0" rx="4"/>
+  <rect x="50" y="90" width="550" height="8" fill="#4caf50" rx="4"/>
+  <text x="50" y="125" font-size="12" font-weight="bold" fill="#1a1a1a">Step 1 of 2: Incident Details</text>
+  
+  <!-- Form Section -->
+  <g>
+    <!-- Title Field -->
+    <text x="50" y="160" font-size="12" font-weight="bold" fill="#1a1a1a">Incident Title *</text>
+    <rect x="50" y="170" width="1100" height="40" fill="#ffffff" stroke="#c0c0c0" stroke-width="1" rx="4"/>
+    <text x="65" y="200" font-size="13" fill="#333">Data breach in authentication service</text>
+    
+    <!-- Description Field -->
+    <text x="50" y="235" font-size="12" font-weight="bold" fill="#1a1a1a">Description *</text>
+    <rect x="50" y="245" width="1100" height="80" fill="#ffffff" stroke="#c0c0c0" stroke-width="1" rx="4"/>
+    <text x="65" y="270" font-size="12" fill="#333">Unauthorized access detected in authentication service</text>
+    <text x="65" y="290" font-size="12" fill="#333">Affecting approximately 500 users</text>
+    <text x="65" y="310" font-size="12" fill="#333">Potential data exposure: user credentials, email addresses</text>
+    
+    <!-- Severity Selection -->
+    <text x="50" y="350" font-size="12" font-weight="bold" fill="#1a1a1a">Severity *</text>
+    <g>
+      <rect x="50" y="360" width="90" height="35" fill="#ffebee" stroke="#ef5350" stroke-width="2" rx="4"/>
+      <text x="95" y="383" font-size="12" font-weight="bold" text-anchor="middle" fill="#c62828">Critical</text>
+    </g>
+    <rect x="160" y="360" width="90" height="35" fill="#fff3e0" stroke="#ffa726" stroke-width="1" rx="4"/>
+    <text x="205" y="383" font-size="12" text-anchor="middle" fill="#666">High</text>
+    <rect x="270" y="360" width="90" height="35" fill="#f1f8e9" stroke="#aed581" stroke-width="1" rx="4"/>
+    <text x="315" y="383" font-size="12" text-anchor="middle" fill="#666">Medium</text>
+    <rect x="380" y="360" width="90" height="35" fill="#f3e5f5" stroke="#ba68c8" stroke-width="1" rx="4"/>
+    <text x="425" y="383" font-size="12" text-anchor="middle" fill="#666">Low</text>
+    
+    <!-- Status Selection -->
+    <text x="50" y="430" font-size="12" font-weight="bold" fill="#1a1a1a">Status *</text>
+    <g>
+      <rect x="50" y="440" width="200" height="35" fill="#ffffff" stroke="#c0c0c0" stroke-width="1" rx="4"/>
+      <text x="65" y="465" font-size="12" fill="#333">🔴 IMMEDIATE</text>
+    </g>
+    
+    <!-- Affected Services -->
+    <text x="50" y="510" font-size="12" font-weight="bold" fill="#1a1a1a">Affected Services *</text>
+    <g>
+      <rect x="50" y="520" width="250" height="35" fill="#ffffff" stroke="#c0c0c0" stroke-width="1" rx="4"/>
+      <text x="65" y="545" font-size="12" fill="#333">Authentication Service (auth-svc-prod)</text>
+    </g>
+    <g>
+      <rect x="320" y="520" width="250" height="35" fill="#ffffff" stroke="#c0c0c0" stroke-width="1" rx="4"/>
+      <text x="335" y="545" font-size="12" fill="#333">User Database (prod-db-01)</text>
+    </g>
+    
+    <!-- Action Buttons -->
+    <g>
+      <rect x="50" y="580" width="100" height="40" fill="#ffffff" stroke="#1976d2" stroke-width="2" rx="4"/>
+      <text x="100" y="606" font-size="12" font-weight="bold" text-anchor="middle" fill="#1976d2">← Back</text>
+    </g>
+    
+    <g>
+      <rect x="1000" y="580" width="150" height="40" fill="#4caf50" rx="4"/>
+      <text x="1075" y="606" font-size="12" font-weight="bold" text-anchor="middle" fill="#ffffff">Next: Roles → </text>
+    </g>
+  </g>
+  
+  <!-- Info Box -->
+  <rect x="50" y="640" width="1100" height="50" fill="#e3f2fd" stroke="#1976d2" stroke-width="1" rx="4"/>
+  <text x="70" y="660" font-size="11" fill="#1a1a1a">ℹ️ Tip: Be specific with incident title and description. Add affected services to help incident response team understand scope.</text>
+  <text x="70" y="678" font-size="11" fill="#1a1a1a">You can add evidence, timeline, and assign roles in the next steps.</text>
+</svg>

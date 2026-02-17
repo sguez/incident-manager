@@ -68,14 +68,7 @@ cd ui && npm install && npm run dev
 
 ## 🏗️ Architecture
 
-```
-React Frontend          FastAPI Backend       SQLite Database
-(Dashboard/Forms) ←→ (REST API + Auth) ←→ (Incidents, Users, Audit)
-                          ↓
-                  Security Layer
-              (JWT, RBAC, Validation,
-               Audit Logging, Rate Limit)
-```
+![Architecture Diagram](docs/images/architecture.svg)
 
 **Core Components:**
 - **`app/main.py`** - FastAPI app with middleware, security headers, startup/shutdown
@@ -83,6 +76,28 @@ React Frontend          FastAPI Backend       SQLite Database
 - **`app/routes/`** - API endpoints (auth, incidents, exports, users, audit)
 - **`app/database.py`** - SQLAlchemy ORM with 8 tables
 - **`ui/`** - React frontend with Vite, Tailwind CSS
+
+## 📊 Product Demo
+
+### Dashboard Overview
+![Incident Dashboard](docs/images/dashboard-demo.svg)
+
+Real-time incident overview with severity-based filtering, role assignments, and quick actions.
+
+### Create Incident - Guided Workflow
+![Create Incident Form](docs/images/create-incident.svg)
+
+Step-by-step incident creation with structured metadata, severity classification, and affected systems.
+
+### Evidence & Timeline Management
+![Evidence Timeline](docs/images/evidence-timeline.svg)
+
+Capture and organize forensic evidence with SHA-256 verification and build comprehensive timelines with UTC timestamps.
+
+### Export & Reports
+![Export Options](docs/images/export-report.svg)
+
+Export incidents to Markdown (Confluence), HTML (email-ready), or PDF (executive) formats with complete audit trails.
 
 ## 🐳 Deployment Cheat Sheet
 

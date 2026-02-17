@@ -1,0 +1,99 @@
+<svg viewBox="0 0 1200 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1200" height="600" fill="#ffffff"/>
+  
+  <!-- Title -->
+  <text x="600" y="40" font-size="28" font-weight="bold" text-anchor="middle" fill="#1a1a1a">
+    Export & Report Options
+  </text>
+  <text x="600" y="65" font-size="14" text-anchor="middle" fill="#666">
+    Export incidents to Markdown, HTML, or PDF for stakeholders
+  </text>
+  
+  <!-- Export Dialog -->
+  <rect x="150" y="100" width="900" height="470" fill="#ffffff" stroke="#1976d2" stroke-width="2" rx="8"/>
+  <text x="600" y="135" font-size="18" font-weight="bold" text-anchor="middle" fill="#1a1a1a">Export Incident Report</text>
+  <text x="600" y="155" font-size="12" text-anchor="middle" fill="#666">INC-2024-0042: Data Exfiltration - DB Server</text>
+  
+  <!-- Format Selection -->
+  <text x="180" y="190" font-size="13" font-weight="bold" fill="#1a1a1a">Report Format</text>
+  
+  <!-- Markdown Option -->
+  <g>
+    <rect x="180" y="205" width="220" height="140" fill="#f5f5f5" stroke="#4caf50" stroke-width="2" rx="4"/>
+    <text x="290" y="230" font-size="16" font-weight="bold" text-anchor="middle" fill="#4caf50">📋 Markdown</text>
+    <text x="290" y="255" font-size="11" text-anchor="middle" fill="#666">Confluence-friendly format</text>
+    <text x="290" y="272" font-size="11" text-anchor="middle" fill="#666">Version control friendly</text>
+    <text x="290" y="289" font-size="11" text-anchor="middle" fill="#666">Best for: Documentation</text>
+    <rect x="195" y="305" width="190" height="30" fill="#4caf50" rx="3"/>
+    <text x="290" y="326" font-size="12" font-weight="bold" text-anchor="middle" fill="#ffffff">Select Format</text>
+  </g>
+  
+  <!-- HTML Option -->
+  <g>
+    <rect x="420" y="205" width="220" height="140" fill="#f5f5f5" stroke="#1976d2" stroke-width="1" rx="4"/>
+    <text x="530" y="230" font-size="16" font-weight="bold" text-anchor="middle" fill="#1976d2">🌐 HTML</text>
+    <text x="530" y="255" font-size="11" text-anchor="middle" fill="#666">Standalone, self-contained</text>
+    <text x="530" y="272" font-size="11" text-anchor="middle" fill="#666">Email-ready with styling</text>
+    <text x="530" y="289" font-size="11" text-anchor="middle" fill="#666">Best for: Sharing & Email</text>
+    <rect x="435" y="305" width="190" height="30" fill="#1976d2" rx="3"/>
+    <text x="530" y="326" font-size="12" font-weight="bold" text-anchor="middle" fill="#ffffff">Select Format</text>
+  </g>
+  
+  <!-- PDF Option -->
+  <g>
+    <rect x="660" y="205" width="220" height="140" fill="#f5f5f5" stroke="#ff9800" stroke-width="1" rx="4"/>
+    <text x="770" y="230" font-size="16" font-weight="bold" text-anchor="middle" fill="#ff9800">📄 PDF</text>
+    <text x="770" y="255" font-size="11" text-anchor="middle" fill="#666">Professional formatting</text>
+    <text x="770" y="272" font-size="11" text-anchor="middle" fill="#666">Print-ready with branding</text>
+    <text x="770" y="289" font-size="11" text-anchor="middle" fill="#666">Best for: Executives</text>
+    <rect x="675" y="305" width="190" height="30" fill="#ff9800" rx="3"/>
+    <text x="770" y="326" font-size="12" font-weight="bold" text-anchor="middle" fill="#ffffff">Select Format</text>
+  </g>
+  
+  <!-- Report Contents -->
+  <text x="180" y="375" font-size="13" font-weight="bold" fill="#1a1a1a">Report Contents</text>
+  
+  <rect x="180" y="385" width="800" height="160" fill="#f9f9f9" stroke="#ddd" stroke-width="1" rx="4"/>
+  
+  <g>
+    <rect x="190" y="395" width="15" height="15" fill="#4caf50" rx="2"/>
+    <text x="215" y="407" font-size="11" fill="#1a1a1a">📋 Incident Summary</text>
+  </g>
+  
+  <g>
+    <rect x="190" y="420" width="15" height="15" fill="#4caf50" rx="2"/>
+    <text x="215" y="432" font-size="11" fill="#1a1a1a">👥 Role Assignments</text>
+  </g>
+  
+  <g>
+    <rect x="190" y="445" width="15" height="15" fill="#4caf50" rx="2"/>
+    <text x="215" y="457" font-size="11" fill="#1a1a1a">📂 Evidence Items</text>
+  </g>
+  
+  <g>
+    <rect x="520" y="395" width="15" height="15" fill="#4caf50" rx="2"/>
+    <text x="545" y="407" font-size="11" fill="#1a1a1a">📅 Forensic Timeline</text>
+  </g>
+  
+  <g>
+    <rect x="520" y="420" width="15" height="15" fill="#4caf50" rx="2"/>
+    <text x="545" y="432" font-size="11" fill="#1a1a1a">✅ Task Checklist</text>
+  </g>
+  
+  <g>
+    <rect x="520" y="445" width="15" height="15" fill="#4caf50" rx="2"/>
+    <text x="545" y="457" font-size="11" fill="#1a1a1a">📊 Audit Trail</text>
+  </g>
+  
+  <!-- Action Buttons -->
+  <g>
+    <rect x="300" y="530" width="150" height="40" fill="#ffffff" stroke="#ddd" stroke-width="1" rx="4"/>
+    <text x="375" y="556" font-size="12" font-weight="bold" text-anchor="middle" fill="#666">Cancel</text>
+  </g>
+  
+  <g>
+    <rect x="750" y="530" width="150" height="40" fill="#4caf50" rx="4"/>
+    <text x="825" y="556" font-size="12" font-weight="bold" text-anchor="middle" fill="#ffffff">📥 Download</text>
+  </g>
+</svg>

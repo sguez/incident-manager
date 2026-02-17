@@ -1,0 +1,93 @@
+<svg viewBox="0 0 1200 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1200" height="600" fill="#f8f9fa"/>
+  
+  <!-- Title -->
+  <text x="600" y="30" font-size="24" font-weight="bold" text-anchor="middle" fill="#1a1a1a">
+    Incident Manager Architecture
+  </text>
+  
+  <!-- Frontend Section -->
+  <g>
+    <rect x="50" y="80" width="280" height="480" fill="#e3f2fd" stroke="#1976d2" stroke-width="2" rx="8"/>
+    <text x="190" y="110" font-size="16" font-weight="bold" text-anchor="middle" fill="#1976d2">Frontend</text>
+    
+    <rect x="70" y="130" width="240" height="80" fill="#ffffff" stroke="#1976d2" stroke-width="1" rx="4"/>
+    <text x="190" y="155" font-size="13" font-weight="bold" text-anchor="middle">React Dashboard</text>
+    <text x="190" y="175" font-size="11" text-anchor="middle" fill="#666">Vite • Tailwind CSS</text>
+    <text x="190" y="195" font-size="11" text-anchor="middle" fill="#666">Real-time UI Updates</text>
+    
+    <rect x="70" y="230" width="240" height="70" fill="#ffffff" stroke="#1976d2" stroke-width="1" rx="4"/>
+    <text x="190" y="255" font-size="13" font-weight="bold" text-anchor="middle">Incident Forms</text>
+    <text x="190" y="275" font-size="11" text-anchor="middle" fill="#666">Create • Edit • Manage</text>
+    
+    <rect x="70" y="320" width="240" height="70" fill="#ffffff" stroke="#1976d2" stroke-width="1" rx="4"/>
+    <text x="190" y="345" font-size="13" font-weight="bold" text-anchor="middle">Role Management</text>
+    <text x="190" y="365" font-size="11" text-anchor="middle" fill="#666">View • Edit • Assign</text>
+    
+    <rect x="70" y="410" width="240" height="70" fill="#ffffff" stroke="#1976d2" stroke-width="1" rx="4"/>
+    <text x="190" y="435" font-size="13" font-weight="bold" text-anchor="middle">Export & Reports</text>
+    <text x="190" y="455" font-size="11" text-anchor="middle" fill="#666">PDF • HTML • Markdown</text>
+  </g>
+  
+  <!-- Backend Section -->
+  <g>
+    <rect x="460" y="80" width="280" height="480" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2" rx="8"/>
+    <text x="600" y="110" font-size="16" font-weight="bold" text-anchor="middle" fill="#7b1fa2">Backend (FastAPI)</text>
+    
+    <rect x="480" y="130" width="240" height="60" fill="#ffffff" stroke="#7b1fa2" stroke-width="1" rx="4"/>
+    <text x="600" y="160" font-size="11" font-weight="bold" text-anchor="middle">JWT Auth • RBAC</text>
+    
+    <rect x="480" y="205" width="240" height="60" fill="#ffffff" stroke="#7b1fa2" stroke-width="1" rx="4"/>
+    <text x="600" y="230" font-size="11" font-weight="bold" text-anchor="middle">Incident CRUD</text>
+    <text x="600" y="245" font-size="10" text-anchor="middle" fill="#666">20+ REST Endpoints</text>
+    
+    <rect x="480" y="280" width="240" height="60" fill="#ffffff" stroke="#7b1fa2" stroke-width="1" rx="4"/>
+    <text x="600" y="305" font-size="11" font-weight="bold" text-anchor="middle">Input Validation</text>
+    <text x="600" y="320" font-size="10" text-anchor="middle" fill="#666">Pydantic Schemas</text>
+    
+    <rect x="480" y="355" width="240" height="60" fill="#ffffff" stroke="#7b1fa2" stroke-width="1" rx="4"/>
+    <text x="600" y="380" font-size="11" font-weight="bold" text-anchor="middle">Audit Logging</text>
+    <text x="600" y="395" font-size="10" text-anchor="middle" fill="#666">DFIR Compliance</text>
+    
+    <rect x="480" y="430" width="240" height="60" fill="#ffffff" stroke="#7b1fa2" stroke-width="1" rx="4"/>
+    <text x="600" y="455" font-size="11" font-weight="bold" text-anchor="middle">Rate Limiting</text>
+    <text x="600" y="470" font-size="10" text-anchor="middle" fill="#666">Security Headers</text>
+  </g>
+  
+  <!-- Database Section -->
+  <g>
+    <rect x="870" y="80" width="280" height="480" fill="#e8f5e9" stroke="#388e3c" stroke-width="2" rx="8"/>
+    <text x="1010" y="110" font-size="16" font-weight="bold" text-anchor="middle" fill="#388e3c">Database (SQLite)</text>
+    
+    <rect x="890" y="130" width="240" height="50" fill="#ffffff" stroke="#388e3c" stroke-width="1" rx="4"/>
+    <text x="1010" y="160" font-size="11" font-weight="bold" text-anchor="middle">Users & Roles</text>
+    
+    <rect x="890" y="195" width="240" height="50" fill="#ffffff" stroke="#388e3c" stroke-width="1" rx="4"/>
+    <text x="1010" y="225" font-size="11" font-weight="bold" text-anchor="middle">Incidents</text>
+    
+    <rect x="890" y="260" width="240" height="50" fill="#ffffff" stroke="#388e3c" stroke-width="1" rx="4"/>
+    <text x="1010" y="290" font-size="11" font-weight="bold" text-anchor="middle">Tasks & Evidence</text>
+    
+    <rect x="890" y="325" width="240" height="50" fill="#ffffff" stroke="#388e3c" stroke-width="1" rx="4"/>
+    <text x="1010" y="355" font-size="11" font-weight="bold" text-anchor="middle">Timeline & Logs</text>
+    
+    <rect x="890" y="390" width="240" height="50" fill="#ffffff" stroke="#388e3c" stroke-width="1" rx="4"/>
+    <text x="1010" y="420" font-size="11" font-weight="bold" text-anchor="middle">Audit Trail</text>
+  </g>
+  
+  <!-- Arrows -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#666"/>
+    </marker>
+  </defs>
+  
+  <!-- Frontend to Backend -->
+  <line x1="330" y1="320" x2="460" y2="320" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="395" y="310" font-size="11" fill="#666">REST API</text>
+  
+  <!-- Backend to Database -->
+  <line x1="740" y1="320" x2="870" y2="320" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="800" y="310" font-size="11" fill="#666">SQLAlchemy ORM</text>
+</svg>

@@ -1,0 +1,103 @@
+<svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1200" height="800" fill="#ffffff"/>
+  
+  <!-- Title -->
+  <text x="600" y="40" font-size="28" font-weight="bold" text-anchor="middle" fill="#1a1a1a">
+    Incident Dashboard Demo
+  </text>
+  <text x="600" y="65" font-size="14" text-anchor="middle" fill="#666">
+    Create and track incidents in a centralized dashboard
+  </text>
+  
+  <!-- Top Bar -->
+  <rect x="30" y="90" width="1140" height="50" fill="#1976d2" rx="4"/>
+  <text x="50" y="120" font-size="16" font-weight="bold" fill="#ffffff">Incident Manager</text>
+  <text x="1100" y="120" font-size="13" fill="#ffffff" text-anchor="end">Admin (user@example.com)</text>
+  
+  <!-- Sidebar -->
+  <rect x="30" y="150" width="200" height="620" fill="#f5f5f5" stroke="#ddd" stroke-width="1"/>
+  <text x="50" y="180" font-size="13" font-weight="bold" fill="#1a1a1a">Dashboard</text>
+  <rect x="40" y="195" width="180" height="35" fill="#1976d2" rx="3"/>
+  <text x="50" y="220" font-size="12" fill="#ffffff">📊 Incidents</text>
+  
+  <text x="50" y="250" font-size="12" fill="#666">🔐 Users</text>
+  <text x="50" y="275" font-size="12" fill="#666">📋 Audit Log</text>
+  <text x="50" y="300" font-size="12" fill="#666">⚙️ Settings</text>
+  <text x="50" y="325" font-size="12" fill="#666">📚 Documentation</text>
+  
+  <!-- Main Content Area -->
+  <g>
+    <!-- Header Section -->
+    <rect x="250" y="150" width="920" height="80" fill="#f0f4ff" stroke="#d3e3ff" stroke-width="1" rx="4"/>
+    <text x="270" y="175" font-size="16" font-weight="bold" fill="#1a1a1a">Active Incidents</text>
+    <text x="270" y="200" font-size="12" fill="#666">Total: 3 | Critical: 1 | High: 1 | Medium: 1</text>
+    
+    <!-- New Incident Button -->
+    <rect x="850" y="165" width="150" height="35" fill="#4caf50" rx="4"/>
+    <text x="925" y="188" font-size="13" font-weight="bold" text-anchor="middle" fill="#ffffff">+ New Incident</text>
+    
+    <!-- Incident Table -->
+    <rect x="250" y="250" width="920" height="30" fill="#e3f2fd" stroke="#90caf9" stroke-width="1"/>
+    <text x="270" y="271" font-size="12" font-weight="bold" fill="#1976d2">ID</text>
+    <text x="330" y="271" font-size="12" font-weight="bold" fill="#1976d2">Title</text>
+    <text x="600" y="271" font-size="12" font-weight="bold" fill="#1976d2">Status</text>
+    <text x="750" y="271" font-size="12" font-weight="bold" fill="#1976d2">Severity</text>
+    <text x="890" y="271" font-size="12" font-weight="bold" fill="#1976d2">Created</text>
+    
+    <!-- Row 1 - Critical -->
+    <rect x="250" y="285" width="920" height="40" fill="#fff3e0" stroke="#ffe0b2" stroke-width="1"/>
+    <text x="270" y="312" font-size="11" fill="#1a1a1a">INC-2024-0042</text>
+    <text x="330" y="312" font-size="11" fill="#1a1a1a">Data Exfiltration - DB Server</text>
+    <text x="600" y="312" font-size="11" fill="#ff6f00" font-weight="bold">🔴 CRITICAL</text>
+    <text x="750" y="312" font-size="11" fill="#d32f2f">Critical</text>
+    <text x="890" y="312" font-size="11" fill="#666">Feb 17, 14:30</text>
+    
+    <!-- Row 2 - High -->
+    <rect x="250" y="330" width="920" height="40" fill="#fce4ec" stroke="#f8bbd0" stroke-width="1"/>
+    <text x="270" y="357" font-size="11" fill="#1a1a1a">INC-2024-0041</text>
+    <text x="330" y="357" font-size="11" fill="#1a1a1a">Suspicious API Activity - Auth Service</text>
+    <text x="600" y="357" font-size="11" fill="#c2185b" font-weight="bold">🟠 HIGH</text>
+    <text x="750" y="357" font-size="11" fill="#f57c00">High</text>
+    <text x="890" y="357" font-size="11" fill="#666">Feb 17, 13:15</text>
+    
+    <!-- Row 3 - Medium -->
+    <rect x="250" y="375" width="920" height="40" fill="#e8f5e9" stroke="#c8e6c9" stroke-width="1"/>
+    <text x="270" y="402" font-size="11" fill="#1a1a1a">INC-2024-0040</text>
+    <text x="330" y="402" font-size="11" fill="#1a1a1a">Failed Login Attempts - Legacy App</text>
+    <text x="600" y="402" font-size="11" fill="#388e3c" font-weight="bold">🟡 MEDIUM</text>
+    <text x="750" y="402" font-size="11" fill="#fbc02d">Medium</text>
+    <text x="890" y="402" font-size="11" fill="#666">Feb 17, 12:00</text>
+    
+    <!-- Status Summary -->
+    <rect x="250" y="430" width="920" height="100" fill="#f9f9f9" stroke="#e0e0e0" stroke-width="1" rx="4"/>
+    <text x="270" y="455" font-size="13" font-weight="bold" fill="#1a1a1a">Quick Stats</text>
+    
+    <rect x="270" y="470" width="85" height="50" fill="#ffffff" border="1px solid #ddd" rx="3"/>
+    <text x="312" y="485" font-size="20" font-weight="bold" text-anchor="middle" fill="#1976d2">3</text>
+    <text x="312" y="510" font-size="11" text-anchor="middle" fill="#666">Active</text>
+    
+    <rect x="380" y="470" width="85" height="50" fill="#ffffff" border="1px solid #ddd" rx="3"/>
+    <text x="422" y="485" font-size="20" font-weight="bold" text-anchor="middle" fill="#d32f2f">1</text>
+    <text x="422" y="510" font-size="11" text-anchor="middle" fill="#666">Critical</text>
+    
+    <rect x="490" y="470" width="85" height="50" fill="#ffffff" border="1px solid #ddd" rx="3"/>
+    <text x="532" y="485" font-size="20" font-weight="bold" text-anchor="middle" fill="#f57c00">1</text>
+    <text x="532" y="510" font-size="11" text-anchor="middle" fill="#666">High</text>
+    
+    <rect x="600" y="470" width="85" height="50" fill="#ffffff" border="1px solid #ddd" rx="3"/>
+    <text x="642" y="485" font-size="20" font-weight="bold" text-anchor="middle" fill="#fbc02d">1</text>
+    <text x="642" y="510" font-size="11" text-anchor="middle" fill="#666">Medium</text>
+    
+    <!-- Recent Activity -->
+    <text x="270" y="560" font-size="13" font-weight="bold" fill="#1a1a1a">Recent Activity</text>
+    <text x="270" y="585" font-size="11" fill="#666">✓ INC-2024-0042: Evidence logged by John Smith (14:45)</text>
+    <text x="270" y="605" font-size="11" fill="#666">✓ INC-2024-0042: Status updated to IN_PROGRESS by IR Lead (14:35)</text>
+    <text x="270" y="625" font-size="11" fill="#666">✓ INC-2024-0042: Created by Security Team (14:30)</text>
+    <text x="270" y="645" font-size="11" fill="#666">✓ INC-2024-0041: Created by Alert System (13:15)</text>
+  </g>
+  
+  <!-- Footer -->
+  <rect x="30" y="760" width="1140" height="30" fill="#f5f5f5" stroke="#ddd" stroke-width="1"/>
+  <text x="50" y="781" font-size="11" fill="#666">Powered by Incident Manager • Last refresh: 14:50 UTC</text>
+</svg>
