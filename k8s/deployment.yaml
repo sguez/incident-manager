@@ -1,0 +1,283 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: incident-manager
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: incident-manager-db
+  namespace: incident-manager
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: incident-manager-exports
+  namespace: incident-manager
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: incident-manager-config
+  namespace: incident-manager
+data:
+  DEBUG: "false"
+  CORS_ORIGINS: "http://localhost:3000,http://localhost:5173"
+  ALLOWED_HOSTS: "incident-manager,incident-manager.incident-manager,incident-manager.incident-manager.svc.cluster.local"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: incident-manager-secrets
+  namespace: incident-manager
+type: Opaque
+stringData:
+  SECRET_KEY: "change-me-to-random-secret-key-in-production"
+  DATABASE_URL: "sqlite+aiosqlite:///./incidents.db"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: incident-manager
+  namespace: incident-manager
+  labels:
+    app: incident-manager
+    version: v2.0.0
+spec:
+  replicas: 1  # Use 1 for SQLite (file-based), increase with PostgreSQL
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: incident-manager
+  template:
+    metadata:
+      labels:
+        app: incident-manager
+        version: v2.0.0
+      annotations:
+        description: "DFIR AppSec Incident Manager"
+    spec:
+      # Pod security standards
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      
+      serviceAccountName: incident-manager
+      
+      containers:
+      - name: incident-manager
+        image: incident-manager:latest
+        imagePullPolicy: IfNotPresent
+        
+        ports:
+        - name: http
+          containerPort: 8000
+          protocol: TCP
+        
+        # Environment variables
+        env:
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              name: incident-manager-config
+              key: DEBUG
+        - name: CORS_ORIGINS
+          valueFrom:
+            configMapKeyRef:
+              name: incident-manager-config
+              key: CORS_ORIGINS
+        - name: ALLOWED_HOSTS
+          valueFrom:
+            configMapKeyRef:
+              name: incident-manager-config
+              key: ALLOWED_HOSTS
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: incident-manager-secrets
+              key: SECRET_KEY
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: incident-manager-secrets
+              key: DATABASE_URL
+        - name: PORT
+          value: "8000"
+        
+        # Resource limits and requests
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        
+        # Security context for container
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+        
+        # Volume mounts
+        volumeMounts:
+        - name: db-storage
+          mountPath: /app
+        - name: exports-storage
+          mountPath: /app/exports
+        - name: logs-storage
+          mountPath: /app/logs
+        - name: tmp
+          mountPath: /tmp
+        
+        # Liveness probe - restart if unhealthy
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        # Readiness probe - remove from LB if not ready
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+        
+        # Startup probe - give app time to start
+        startupProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 0
+          periodSeconds: 2
+          timeoutSeconds: 3
+          failureThreshold: 30
+      
+      # Volumes
+      volumes:
+      - name: db-storage
+        persistentVolumeClaim:
+          claimName: incident-manager-db
+      - name: exports-storage
+        persistentVolumeClaim:
+          claimName: incident-manager-exports
+      - name: logs-storage
+        emptyDir: {}
+      - name: tmp
+        emptyDir: {}
+      
+      # Affinity rules for node scheduling
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - incident-manager
+              topologyKey: kubernetes.io/hostname
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: incident-manager
+  namespace: incident-manager
+  labels:
+    app: incident-manager
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    app: incident-manager
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: incident-manager
+  namespace: incident-manager
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: incident-manager
+  namespace: incident-manager
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: incident-manager
+  namespace: incident-manager
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: incident-manager
+subjects:
+- kind: ServiceAccount
+  name: incident-manager
+  namespace: incident-manager
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: incident-manager
+  namespace: incident-manager
+spec:
+  podSelector:
+    matchLabels:
+      app: incident-manager
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: incident-manager
+    ports:
+    - protocol: TCP
+      port: 8000
+  egress:
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 53  # DNS
+    - protocol: UDP
+      port: 53  # DNS

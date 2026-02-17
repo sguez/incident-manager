@@ -1,0 +1,119 @@
+apiVersion: helm.sh/v1
+kind: Chart
+metadata:
+  name: incident-manager
+  description: DFIR AppSec Incident Manager
+  type: application
+  version: 2.0.0
+  appVersion: "2.0.0"
+  keywords:
+    - incident-response
+    - dfir
+    - appsec
+    - security
+  home: https://github.com/sguez/incident-manager
+  maintainers:
+    - name: Incident Manager Team
+---
+apiVersion: v1
+kind: Values
+data:
+  # Replicas (use 1 for SQLite, scale with PostgreSQL)
+  replicaCount: 1
+  
+  # Image configuration
+  image:
+    repository: incident-manager
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 8000
+  
+  # Ingress configuration (optional)
+  ingress:
+    enabled: false
+    className: nginx
+    annotations: {}
+    hosts:
+      - host: incident-manager.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: incident-manager-tls
+        hosts:
+          - incident-manager.example.com
+  
+  # Resource limits
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  
+  # Storage
+  persistence:
+    enabled: true
+    storageClass: default
+    db:
+      size: 10Gi
+    exports:
+      size: 5Gi
+  
+  # Security
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+  
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+  
+  # Database
+  database:
+    type: sqlite  # or postgresql
+    # For sqlite (file-based)
+    sqlite:
+      path: /app/incidents.db
+  
+  # Application settings
+  app:
+    debug: false
+    corsOrigins: "http://localhost:3000,http://localhost:5173"
+    allowedHosts: "localhost,incident-manager"
+  
+  # Probes
+  healthCheck:
+    liveness:
+      initialDelaySeconds: 15
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readiness:
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 2
+    startup:
+      initialDelaySeconds: 0
+      periodSeconds: 2
+      timeoutSeconds: 3
+      failureThreshold: 30
+  
+  # Node affinity
+  affinity: {}
+  
+  # Pod disruption budget
+  podDisruptionBudget:
+    enabled: false
+    minAvailable: 1

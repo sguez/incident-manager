@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  incident-manager:
+    build: .
+    container_name: incident-manager
+    ports:
+      - "8000:8000"
+    environment:
+      - SECRET_KEY=your-secret-key-change-in-production
+      - DATABASE_URL=sqlite+aiosqlite:///./incidents.db
+      - DEBUG=false
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173
+      - ALLOWED_HOSTS=localhost,127.0.0.1,incident-manager
+    volumes:
+      - ./incidents.db:/app/incidents.db
+      - ./exports:/app/exports
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - incident-manager-net
+
+  # Optional: Frontend development server (comment out if not using)
+  # frontend:
+  #   image: node:18-alpine
+  #   container_name: incident-manager-ui
+  #   working_dir: /app
+  #   ports:
+  #     - "5173:5173"
+  #   volumes:
+  #     - ./ui:/app
+  #   command: npm run dev
+  #   environment:
+  #     - VITE_API_URL=http://localhost:8000/api
+  #   networks:
+  #     - incident-manager-net
+  #   depends_on:
+  #     - incident-manager
+
+networks:
+  incident-manager-net:
+    driver: bridge
+
+volumes:
+  incidents-db:

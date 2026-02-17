@@ -1,12 +1,87 @@
-# .gitignore
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# Ignore everything by default
-*
+# Virtual environments
+.venv
+venv/
+ENV/
+env/
+.venv/
 
-# Allow Python script and requirements.txt
-!incident_manager.py
-!requirements.txt
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
 
-# Allow README and gitignore itself
-!README.md
-!.gitignore
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.hypothesis/
+
+# Application
+incidents.db
+incidents.db-shm
+incidents.db-wal
+db/
+exports/
+logs/
+
+# Node/Frontend
+ui/node_modules/
+ui/dist/
+ui/.env.local
+
+# Docker
+.dockerignore
+
+# Kubernetes
+.kubeconfig
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backup/Temporary
+*.bak
+*.tmp
+*.log
+
+# AI Assistant Skills/Resources
+.claude-skills/
+.cursorrules
+.cline_rules/
+CLAUDE.md
+AGENTS.md
+CONVENTIONS.md
+.windsurfrules
