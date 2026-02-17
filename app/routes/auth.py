@@ -6,7 +6,7 @@ from sqlalchemy import select
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from app.models import TokenResponse, UserCreate
+from app.models import TokenResponse, UserCreate, LoginRequest
 from app.database import User as UserModel
 from app.security import (
     get_current_user,
@@ -25,24 +25,25 @@ limiter = Limiter(key_func=get_remote_address)
 @limiter.limit(RateLimitConfig.AUTH_LIMIT)
 async def login(
     request: Request,
-    username: str,
-    password: str,
-    db: AsyncSession = Depends(lambda: None),  # Will get from app state
+    credentials: LoginRequest,
+    db: AsyncSession = Depends(lambda: None),
 ):
     """
-    Login with username and password.
+    Login with validated credentials.
     Returns JWT access token.
+    - **username**: Alphanumeric, hyphen, underscore (3-50 chars)
+    - **password**: 8-255 characters
     """
     # Get DB session from app state
     from app.main import AsyncSessionLocal
     async with AsyncSessionLocal() as session:
-        # Find user
+        # Find user by validated username
         result = await session.execute(
-            select(UserModel).filter(UserModel.username == username)
+            select(UserModel).filter(UserModel.username == credentials.username)
         )
         user = result.scalars().first()
         
-        if not user or not verify_password(password, user.password_hash):
+        if not user or not verify_password(credentials.password, user.password_hash):
             raise AuthenticationError("Invalid credentials")
         
         if not user.is_active:

@@ -1,7 +1,6 @@
 """Incident management routes."""
-import random
-import string
-from datetime import datetime
+import secrets
+from datetime import datetime, timezone
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -41,10 +40,11 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 def gen_incident_key() -> str:
-    """Generate incident ID in format: xxxx-YYYY-MM-DD"""
-    rand = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(4))
-    today = datetime.utcnow()
-    return f"{rand}-{today:%Y-%m-%d}"
+    """Generate secure incident ID in format: INC-YYYYMMDD-XXXXXX"""
+    # Use cryptographically secure random hex (6 chars = 24-bit entropy = 16M combinations)
+    random_suffix = secrets.token_hex(3)
+    today = datetime.now(timezone.utc)
+    return f"INC-{today:%Y%m%d}-{random_suffix.upper()}"
 
 
 async def log_audit(

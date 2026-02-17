@@ -2,7 +2,7 @@
 Security and authentication module following .claude_skills patterns.
 Implements JWT-based auth, RBAC, and audit logging.
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 from functools import lru_cache
 from jose import JWTError, jwt
@@ -15,7 +15,12 @@ import os
 from app.models import TokenPayload, UserRole, User as UserModel
 
 # Settings
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production-12345678")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError(
+        "SECRET_KEY environment variable must be set for production. "
+        "Generate with: python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+    )
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = int(os.getenv("ACCESS_TOKEN_EXPIRE_HOURS", "24"))
 
@@ -61,11 +66,11 @@ def create_access_token(
     roles: List[UserRole],
     expires_delta: Optional[timedelta] = None,
 ) -> str:
-    """Create JWT access token."""
+    """Create JWT access token with secure expiration."""
     if expires_delta is None:
         expires_delta = timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
 
-    expire = datetime.utcnow() + expires_delta
+    expire = datetime.now(timezone.utc) + expires_delta
     
     to_encode = {
         "sub": user_id,

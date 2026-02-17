@@ -2,14 +2,38 @@
 
 Comprehensive security documentation following `.claude_skills` patterns.
 
+⚠️ **IMPORTANT**: See [SECURITY_AUDIT.md](SECURITY_AUDIT.md) for full security audit findings and remediation roadmap (3 CRITICAL, 6 HIGH, 4 MEDIUM findings with fixes).
+
 ## Table of Contents
-1. [Authentication & Authorization](#authentication--authorization)
-2. [Input Validation & Output Encoding](#input-validation--output-encoding)
-3. [Audit Logging](#audit-logging)
-4. [Container Security](#container-security)
-5. [Kubernetes Security](#kubernetes-security)
-6. [Best Practices](#best-practices)
-7. [Security Checklist](#security-checklist)
+1. [Security Audit Findings](#security-audit-findings)
+2. [Authentication & Authorization](#authentication--authorization)
+3. [Input Validation & Output Encoding](#input-validation--output-encoding)
+4. [Audit Logging](#audit-logging)
+5. [Container Security](#container-security)
+6. [Kubernetes Security](#kubernetes-security)
+7. [Best Practices](#best-practices)
+8. [Security Checklist](#security-checklist)
+
+---
+
+## Security Audit Findings
+
+**Last Audit**: 2026-02-17  
+**Status**: 🟠 Partial Compliance - Improvements in Progress
+
+### Critical Issues Addressed
+- ✅ Secure SECRET_KEY requirement (no defaults)
+- ✅ Input validation on login credentials
+- ✅ Secure randomness for incident IDs
+- ✅ Timezone-aware JWT expiration
+
+### High Priority Items (In Progress)
+- 🔄 Token revocation/blacklist mechanism (Week 1-2)
+- 🔄 Incident-level access control (Week 1-2)
+- 🔄 CSRF protection middleware (Week 1-2)
+- 🔄 Secrets management integration (Week 2-4)
+
+**See [SECURITY_AUDIT.md](SECURITY_AUDIT.md) for detailed findings, risk levels, and remediation roadmap.**
 
 ---
 
@@ -30,16 +54,33 @@ Tokens are signed with HS256 algorithm and include:
 ```
 
 **Token Management:**
-- Default expiration: 24 hours
+- Default expiration: 24 hours (configurable via `ACCESS_TOKEN_EXPIRE_HOURS`)
+- ✅ Timezone-aware expiration (UTC)
 - Use refresh endpoint to get new token before expiration
-- Tokens are signed with `SECRET_KEY` (must be changed in production)
+- Tokens are signed with `SECRET_KEY` (must be set via environment variable)
 - Tokens use Bearer scheme in Authorization header
+
+**Secure Token Setup:**
+```bash
+# 1. Generate secure SECRET_KEY
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+
+# 2. Set in environment
+export SECRET_KEY="your-generated-key-here"
+
+# 3. Login with validated credentials
+curl -X POST http://localhost:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"user","password":"pass"}' \
+  -c cookies.txt
+```
 
 **Secure Token Handling:**
 ```bash
 # DO: Store in secure HTTP-only cookie or secure storage
 curl -X POST http://localhost:8000/api/auth/login \
-  -d "username=user&password=pass" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"user","password":"pass"}' \
   -c cookies.txt  # Save to secure cookie
 
 # DON'T: Store in localStorage (vulnerable to XSS)

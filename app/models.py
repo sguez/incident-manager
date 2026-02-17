@@ -52,6 +52,30 @@ class UserRole(str, Enum):
 
 # ============= Auth Models =============
 
+class LoginRequest(BaseModel):
+    """Login request with validated credentials."""
+    username: str = Field(
+        ..., 
+        min_length=3, 
+        max_length=50,
+        description="Username (alphanumeric, hyphen, underscore only)"
+    )
+    password: str = Field(
+        ..., 
+        min_length=8,
+        max_length=255,
+        description="Password (8-255 characters)"
+    )
+    
+    @validator('username')
+    def validate_username(cls, v):
+        """Validate username format."""
+        # Allow alphanumeric, hyphen, underscore
+        if not all(c.isalnum() or c in '-_' for c in v):
+            raise ValueError("Username must contain only alphanumeric characters, hyphens, and underscores")
+        return v.lower().strip()
+
+
 class TokenResponse(BaseModel):
     """JWT token response."""
     access_token: str
