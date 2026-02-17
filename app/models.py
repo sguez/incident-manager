@@ -81,6 +81,7 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     expires_in: int
+    csrf_token: Optional[str] = None
 
 
 class TokenPayload(BaseModel):
@@ -248,3 +249,37 @@ class ValidationErrorResponse(BaseModel):
     """Validation error response."""
     errors: List[dict]
     request_id: Optional[str] = None
+
+
+# ============= Security Models =============
+
+class CsrfTokenResponse(BaseModel):
+    """CSRF token response."""
+    csrf_token: str
+
+
+class IncidentPermission(str, Enum):
+    """Incident permission types."""
+    CAN_VIEW = "can_view"
+    CAN_EDIT = "can_edit"
+    CAN_DELETE = "can_delete"
+
+
+class IncidentACLEntry(BaseModel):
+    """Incident ACL entry."""
+    id: int
+    incident_id: int
+    user_id: int
+    can_view: bool
+    can_edit: bool
+    can_delete: bool
+    granted_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class LogoutResponse(BaseModel):
+    """Logout response."""
+    message: str
+    status: str = "success"

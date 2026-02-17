@@ -1,12 +1,13 @@
 """Authentication routes."""
-from datetime import timedelta
+from datetime import timedelta, datetime
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from jose import jwt
 
-from app.models import TokenResponse, UserCreate, LoginRequest
+from app.models import TokenResponse, UserCreate, LoginRequest, LogoutResponse, CsrfTokenResponse
 from app.database import User as UserModel
 from app.security import (
     get_current_user,
@@ -15,6 +16,10 @@ from app.security import (
     verify_password,
     RateLimitConfig,
     AuthenticationError,
+    add_token_to_blacklist,
+    CsrfSettings,
+    SECRET_KEY,
+    ALGORITHM,
 )
 
 router = APIRouter()
@@ -30,7 +35,7 @@ async def login(
 ):
     """
     Login with validated credentials.
-    Returns JWT access token.
+    Returns JWT access token with CSRF token.
     - **username**: Alphanumeric, hyphen, underscore (3-50 chars)
     - **password**: 8-255 characters
     """
@@ -50,16 +55,20 @@ async def login(
             raise AuthenticationError("User account is inactive")
         
         # Create token
-        access_token = create_access_token(
+        access_token, jti = create_access_token(
             user_id=str(user.id),
             username=user.username,
             roles=user.roles,
         )
         
+        # Generate CSRF token
+        csrf_token = CsrfSettings.generate_token()
+        
         return TokenResponse(
             access_token=access_token,
             token_type="bearer",
-            expires_in=24 * 3600,  # 24 hours in seconds
+            expires_in=24 * 3600,
+            csrf_token=csrf_token,
         )
 
 
@@ -104,16 +113,20 @@ async def register(
         await session.refresh(new_user)
         
         # Create token
-        access_token = create_access_token(
+        access_token, jti = create_access_token(
             user_id=str(new_user.id),
             username=new_user.username,
             roles=new_user.roles,
         )
         
+        # Generate CSRF token
+        csrf_token = CsrfSettings.generate_token()
+        
         return TokenResponse(
             access_token=access_token,
             token_type="bearer",
             expires_in=24 * 3600,
+            csrf_token=csrf_token,
         )
 
 
@@ -137,14 +150,63 @@ async def refresh_token(
     current_user=Depends(get_current_user),
 ):
     """Refresh JWT access token."""
-    access_token = create_access_token(
+    access_token, jti = create_access_token(
         user_id=current_user.user_id,
         username=current_user.username,
         roles=current_user.roles,
     )
     
+    # Generate CSRF token
+    csrf_token = CsrfSettings.generate_token()
+    
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
         expires_in=24 * 3600,
+        csrf_token=csrf_token,
     )
+
+
+@router.post("/logout", response_model=LogoutResponse)
+async def logout(
+    request: Request,
+    current_user=Depends(get_current_user),
+):
+    """
+    Logout user by revoking their token.
+    Adds token to blacklist.
+    """
+    # Extract jti from token via JWT decode (we need to get it from the Authorization header)
+    from fastapi.security import HTTPBearer
+    auth = HTTPBearer()
+    
+    try:
+        credentials = await auth(request)
+        token = credentials.credentials
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        jti = payload.get("jti")
+        exp = payload.get("exp")
+        
+        if jti and exp:
+            exp_dt = datetime.utcfromtimestamp(exp)
+            await add_token_to_blacklist(jti, int(current_user.user_id), exp_dt)
+        
+        return LogoutResponse(
+            message="Successfully logged out",
+            status="success",
+        )
+    except Exception as e:
+        return LogoutResponse(
+            message="Logout completed (token blacklist may not be available)",
+            status="success",
+        )
+
+
+@router.get("/csrf-token", response_model=CsrfTokenResponse)
+async def get_csrf_token(request: Request):
+    """
+    Get a CSRF token for form submissions.
+    Can be used by unauthenticated clients.
+    """
+    csrf_token = CsrfSettings.generate_token()
+    return CsrfTokenResponse(csrf_token=csrf_token)

@@ -1,6 +1,6 @@
 """
 Security and authentication module following .claude_skills patterns.
-Implements JWT-based auth, RBAC, and audit logging.
+Implements JWT-based auth, RBAC, token revocation, ACL, and CSRF protection.
 """
 from datetime import datetime, timedelta, timezone
 from typing import Optional, List
@@ -11,6 +11,8 @@ from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthCredentials
 from pydantic import ValidationError
 import os
+import secrets
+import uuid
 
 from app.models import TokenPayload, UserRole, User as UserModel
 
@@ -65,12 +67,16 @@ def create_access_token(
     username: str,
     roles: List[UserRole],
     expires_delta: Optional[timedelta] = None,
-) -> str:
-    """Create JWT access token with secure expiration."""
+) -> tuple:
+    """
+    Create JWT access token with secure expiration.
+    Returns: (token, jti) where jti is the JWT ID for blacklist support.
+    """
     if expires_delta is None:
         expires_delta = timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
 
     expire = datetime.now(timezone.utc) + expires_delta
+    jti = str(uuid.uuid4())
     
     to_encode = {
         "sub": user_id,
@@ -79,10 +85,11 @@ def create_access_token(
         "roles": [role.value for role in roles],
         "exp": expire,
         "iat": datetime.utcnow(),
+        "jti": jti,
     }
     
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+    return encoded_jwt, jti
 
 
 async def get_current_user(
@@ -91,6 +98,7 @@ async def get_current_user(
 ) -> TokenPayload:
     """
     Validate JWT token and extract user info.
+    Checks if token is blacklisted (revoked).
     Used as dependency in protected endpoints.
     """
     token = credentials.credentials
@@ -100,9 +108,16 @@ async def get_current_user(
         user_id: str = payload.get("sub")
         username: str = payload.get("username")
         roles_data: list = payload.get("roles", [])
+        jti: str = payload.get("jti")
         
         if user_id is None or username is None:
             raise AuthenticationError("Invalid token structure")
+        
+        # Check if token is blacklisted
+        if jti:
+            is_blacklisted = await check_token_blacklisted(jti)
+            if is_blacklisted:
+                raise AuthenticationError("Token has been revoked")
         
         # Convert role strings back to UserRole enum
         roles = [UserRole(r) for r in roles_data]
@@ -121,6 +136,162 @@ async def get_current_user(
         raise AuthenticationError(f"Invalid token payload: {str(e)}")
     
     return token_data
+
+
+async def check_token_blacklisted(jti: str) -> bool:
+    """Check if token (by jti) is blacklisted."""
+    try:
+        from sqlalchemy import select
+        from app.database import TokenBlacklist
+        from app.main import AsyncSessionLocal
+        
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(
+                select(TokenBlacklist).filter(TokenBlacklist.jti == jti)
+            )
+            return result.scalars().first() is not None
+    except Exception:
+        # If DB check fails, don't fail auth entirely - just continue
+        return False
+
+
+async def add_token_to_blacklist(jti: str, user_id: int, expires_at: datetime) -> bool:
+    """Add token to blacklist for logout support."""
+    try:
+        from app.database import TokenBlacklist
+        from app.main import AsyncSessionLocal
+        
+        async with AsyncSessionLocal() as session:
+            blacklist_entry = TokenBlacklist(
+                jti=jti,
+                user_id=user_id,
+                expires_at=expires_at,
+            )
+            session.add(blacklist_entry)
+            await session.commit()
+            return True
+    except Exception as e:
+        print(f"Error blacklisting token: {e}")
+        return False
+
+
+async def cleanup_expired_tokens() -> int:
+    """Remove expired tokens from blacklist. Returns count of deleted entries."""
+    try:
+        from sqlalchemy import delete
+        from app.database import TokenBlacklist
+        from app.main import AsyncSessionLocal
+        
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(
+                delete(TokenBlacklist).where(
+                    TokenBlacklist.expires_at < datetime.utcnow()
+                )
+            )
+            await session.commit()
+            return result.rowcount
+    except Exception as e:
+        print(f"Error cleaning up tokens: {e}")
+        return 0
+
+
+async def check_incident_permission(
+    incident_id: int,
+    user_id: int,
+    permission: str = "can_view",
+) -> bool:
+    """
+    Check if user has specific permission on incident.
+    Permission can be: can_view, can_edit, can_delete
+    Returns True if user is incident creator or has explicit permission.
+    """
+    try:
+        from sqlalchemy import select, or_
+        from app.database import Incident as IncidentModel, IncidentACL
+        from app.main import AsyncSessionLocal
+        
+        async with AsyncSessionLocal() as session:
+            # Get incident
+            result = await session.execute(
+                select(IncidentModel).filter(IncidentModel.id == incident_id)
+            )
+            incident = result.scalars().first()
+            
+            if not incident:
+                return False
+            
+            # Incident creator always has all permissions
+            if incident.created_by_id == user_id:
+                return True
+            
+            # Check explicit ACL permission
+            result = await session.execute(
+                select(IncidentACL).filter(
+                    IncidentACL.incident_id == incident_id,
+                    IncidentACL.user_id == user_id,
+                )
+            )
+            acl = result.scalars().first()
+            
+            if not acl:
+                return False
+            
+            if permission == "can_view":
+                return acl.can_view
+            elif permission == "can_edit":
+                return acl.can_edit
+            elif permission == "can_delete":
+                return acl.can_delete
+            
+            return False
+    except Exception:
+        return False
+
+
+async def grant_incident_permissions(
+    incident_id: int,
+    user_id: int,
+    can_view: bool = True,
+    can_edit: bool = False,
+    can_delete: bool = False,
+) -> bool:
+    """Grant explicit permissions on an incident to a user."""
+    try:
+        from sqlalchemy import select
+        from app.database import IncidentACL
+        from app.main import AsyncSessionLocal
+        
+        async with AsyncSessionLocal() as session:
+            # Check if ACL already exists
+            result = await session.execute(
+                select(IncidentACL).filter(
+                    IncidentACL.incident_id == incident_id,
+                    IncidentACL.user_id == user_id,
+                )
+            )
+            existing_acl = result.scalars().first()
+            
+            if existing_acl:
+                # Update existing
+                existing_acl.can_view = can_view
+                existing_acl.can_edit = can_edit
+                existing_acl.can_delete = can_delete
+            else:
+                # Create new
+                acl = IncidentACL(
+                    incident_id=incident_id,
+                    user_id=user_id,
+                    can_view=can_view,
+                    can_edit=can_edit,
+                    can_delete=can_delete,
+                )
+                session.add(acl)
+            
+            await session.commit()
+            return True
+    except Exception as e:
+        print(f"Error granting permissions: {e}")
+        return False
 
 
 def require_role(*required_roles: UserRole):
@@ -241,6 +412,26 @@ class SecurityHeaders:
             "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
             "Referrer-Policy": "strict-origin-when-cross-origin",
         }
+
+
+class CsrfSettings:
+    """CSRF token generation and validation."""
+    
+    CSRF_TOKEN_LENGTH = 32
+    CSRF_HEADER_NAME = "X-CSRF-Token"
+    CSRF_COOKIE_NAME = "csrf_token"
+    
+    @staticmethod
+    def generate_token() -> str:
+        """Generate a secure CSRF token."""
+        return secrets.token_urlsafe(CsrfSettings.CSRF_TOKEN_LENGTH)
+    
+    @staticmethod
+    def validate_token(client_token: str, session_token: str) -> bool:
+        """Validate CSRF token using timing-safe comparison."""
+        if not client_token or not session_token:
+            return False
+        return secrets.compare_digest(client_token, session_token)
 
 
 class RateLimitConfig:

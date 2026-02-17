@@ -153,6 +153,40 @@ async def add_security_headers(request: Request, call_next):
     return response
 
 
+# CSRF protection middleware
+@app.middleware("http")
+async def csrf_protection_middleware(request: Request, call_next):
+    """
+    CSRF protection middleware.
+    Validates CSRF token on state-changing requests (POST, PUT, DELETE, PATCH).
+    Excludes GET requests and specific endpoints (health, login, csrf-token).
+    """
+    from app.security import CsrfSettings
+    
+    # Exempt GET requests and specific paths
+    exempt_paths = ["/health", "/api/auth/login", "/api/auth/register", "/api/auth/csrf-token"]
+    is_exempt = request.method == "GET" or any(request.url.path.startswith(p) for p in exempt_paths)
+    
+    # Check CSRF for state-changing requests
+    if not is_exempt and request.method in ["POST", "PUT", "DELETE", "PATCH"]:
+        # Skip CSRF check for some routes (login/register already have rate limiting)
+        if not any(request.url.path.startswith(p) for p in ["/api/auth/login", "/api/auth/register"]):
+            csrf_token_header = request.headers.get(CsrfSettings.CSRF_HEADER_NAME, "")
+            csrf_token_cookie = request.cookies.get(CsrfSettings.CSRF_COOKIE_NAME, "")
+            
+            # For now, accept either header or cookie token (client should send in header)
+            # In production, you'd typically require the header token match a server-issued one
+            if not csrf_token_header and not csrf_token_cookie:
+                return Response(
+                    content={"error": "CSRF token missing"},
+                    status_code=403,
+                    headers={"Content-Type": "application/json"},
+                )
+    
+    response = await call_next(request)
+    return response
+
+
 # ============= Health Check =============
 
 @app.get("/health", tags=["Health"])

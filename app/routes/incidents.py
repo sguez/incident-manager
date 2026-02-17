@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, or_
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -27,12 +27,15 @@ from app.database import (
     EvidenceEntry as EvidenceModel,
     TimelineEntry as TimelineModel,
     ChecklistItem as ChecklistModel,
+    IncidentACL,
 )
 from app.security import (
     get_current_user,
     require_role,
     InputValidator,
     RateLimitConfig,
+    check_incident_permission,
+    grant_incident_permissions,
 )
 
 router = APIRouter()
@@ -132,6 +135,15 @@ async def create_incident(
         await session.commit()
         await session.refresh(new_incident)
         
+        # Grant creator full permissions on incident
+        await grant_incident_permissions(
+            incident_id=new_incident.id,
+            user_id=int(current_user.user_id),
+            can_view=True,
+            can_edit=True,
+            can_delete=True,
+        )
+        
         return _incident_to_response(new_incident)
 
 
@@ -145,11 +157,23 @@ async def list_incidents(
     severity_filter: str = Query(None),
     current_user=Depends(get_current_user),
 ):
-    """List incidents with pagination and filtering."""
+    """List incidents with pagination and filtering. Only returns incidents user can view."""
     from app.main import AsyncSessionLocal
     
     async with AsyncSessionLocal() as session:
-        query = select(IncidentModel).order_by(desc(IncidentModel.created_at))
+        user_id = int(current_user.user_id)
+        
+        # Query incidents where user is creator OR has view permission
+        query = select(IncidentModel).where(
+            or_(
+                IncidentModel.created_by_id == user_id,
+                IncidentModel.id.in_(
+                    select(IncidentACL.incident_id).where(
+                        (IncidentACL.user_id == user_id) & (IncidentACL.can_view == True)
+                    )
+                )
+            )
+        ).order_by(desc(IncidentModel.created_at))
         
         # Filter by status if provided
         if status_filter:
@@ -186,8 +210,21 @@ async def get_incident(
     incident_id: int,
     current_user=Depends(get_current_user),
 ):
-    """Get incident details."""
+    """Get incident details. Requires can_view permission."""
     from app.main import AsyncSessionLocal
+    
+    # Check permission
+    has_permission = await check_incident_permission(
+        incident_id=incident_id,
+        user_id=int(current_user.user_id),
+        permission="can_view",
+    )
+    
+    if not has_permission:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to view this incident",
+        )
     
     async with AsyncSessionLocal() as session:
         result = await session.execute(
@@ -225,8 +262,21 @@ async def update_incident(
     incident_data: IncidentUpdate,
     current_user=Depends(require_role(UserRole.IR_LEAD, UserRole.ADMIN)),
 ):
-    """Update incident details."""
+    """Update incident details. Requires can_edit permission."""
     from app.main import AsyncSessionLocal
+    
+    # Check permission
+    has_permission = await check_incident_permission(
+        incident_id=incident_id,
+        user_id=int(current_user.user_id),
+        permission="can_edit",
+    )
+    
+    if not has_permission:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to edit this incident",
+        )
     
     async with AsyncSessionLocal() as session:
         result = await session.execute(
@@ -294,8 +344,21 @@ async def delete_incident(
     incident_id: int,
     current_user=Depends(require_role(UserRole.ADMIN)),
 ):
-    """Delete an incident (admin only)."""
+    """Delete an incident. Requires can_delete permission (admins or incident creator)."""
     from app.main import AsyncSessionLocal
+    
+    # Check permission
+    has_permission = await check_incident_permission(
+        incident_id=incident_id,
+        user_id=int(current_user.user_id),
+        permission="can_delete",
+    )
+    
+    if not has_permission:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to delete this incident",
+        )
     
     async with AsyncSessionLocal() as session:
         result = await session.execute(

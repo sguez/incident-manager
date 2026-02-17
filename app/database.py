@@ -177,3 +177,44 @@ class AuditLog(Base):
     # Relationships
     user = relationship("User", back_populates="audit_logs")
     incident = relationship("Incident", back_populates="audit_logs")
+
+
+class TokenBlacklist(Base):
+    """Blacklisted JWT tokens for logout support."""
+    __tablename__ = "token_blacklist"
+    __table_args__ = (
+        Index("ix_token_blacklist_jti", "jti", unique=True),
+        Index("ix_token_blacklist_user", "user_id"),
+        Index("ix_token_blacklist_expires", "expires_at"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    jti = Column(String(500), nullable=False, unique=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    blacklisted_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+
+    # Relationships
+    user = relationship("User")
+
+
+class IncidentACL(Base):
+    """Access control list for incidents."""
+    __tablename__ = "incident_acl"
+    __table_args__ = (
+        Index("ix_incident_acl_incident", "incident_id"),
+        Index("ix_incident_acl_user", "user_id"),
+        Index("ix_incident_acl_incident_user", "incident_id", "user_id", unique=True),
+    )
+
+    id = Column(Integer, primary_key=True)
+    incident_id = Column(Integer, ForeignKey("incidents.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    can_view = Column(Boolean, default=True)
+    can_edit = Column(Boolean, default=False)
+    can_delete = Column(Boolean, default=False)
+    granted_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    incident = relationship("Incident")
+    user = relationship("User")
